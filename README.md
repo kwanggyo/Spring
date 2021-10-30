@@ -155,3 +155,135 @@ spring-boot-starter-test
 - spring-test : 스프링 통합 테스트 지원
 
 <br>
+
+# View 환경설정
+
+자료를 찾을 때는 https://spring.io/projects/spring-boot#learn 여기서 맞는 버전의 Doc에서 찾기 !
+
+템플릿엔진을 사용하면 정적인 페이지를 원하는 대로 바꿀 수 있다. → Thymeleaf 사용 예정
+
+Cotroller : 웹 어플리케이션에서 첫 진입점
+
+```java
+@Controller
+public class HelloController {
+
+    @GetMapping("hello")    // 웹 어플리케이션에서 /hello라고 들어오면 이 메소드를 호출한다.
+    public String hello(Model model) {  // 스프링이 모델을 만들어서 넣어준다. model(data:hello!!)
+        model.addAttribute("data", "hello!!");
+        return "hello"; 
+    }
+}
+```
+
+- return의 이름이 hello -> resource에 있는 hello로 가서 렌더링 하라는 것 data는 model을 넘김
+- 기본적으로 templates 밑에 있는 것을 찾음 : 스프링 기본 동작으로 세팅 되어있음
+- 컨트롤러에서 리턴 값으로 문자를 반환하면 뷰 리졸버(viewResolver)가 화면을 찾아서 처리한다.
+  - 스프링 부트 템플릿엔진은 기본적으로 viewName을 매핑 -> 여기서 viewName은 'hello'
+  - `resources:templates/` + {viewName} + `.html`이 열리게 된다.
+
+### 참고
+
+spring-boot-devtools 라이브러리를 추가하면, html 파일을 컴파일만 해주면 서버 재시작 없이 View 파일 변경이 가능하다.
+
+Intellij 컴파일 방법 : 메뉴 build → Recompile
+
+<br>
+
+# 빌드하고 실행하기
+
+### 빌드
+
+현재 프로젝트가 있는 폴더에서 window : gradlew.bat build
+
+💣 자바 11 버전이 아니라고 빌드가 안되는 에러 발생
+
+→ gradlew.bat 안에 JAVA_HOME 부분이 문제였다!
+
+- Intellij 에서는 11로 연결해놨기 때문에 빌드가 된 것이고 로컬에서 JAVA_HOME은 8로 등록되어 있어서 생긴 문제!
+
+- ZULU_HOME을 11로 설정하여 환경변수에 넣어주고 해결되나 싶었으나 인식을 못해서 경로를 넣어서 해결했다!
+
+  - gradlew.bat 파일 수정
+
+  ```java
+  :findJavaFromJavaHome
+  set JAVA_HOME=C:/program files/zulu/zulu-11
+  set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+  ```
+
+빌드가 안될 경우 gradlew.bat clean build 사용
+
+- build 폴더를 지우고 다시 빌드
+
+### 실행
+
+실행 폴더로 이동 : hello-spring > build > libs
+
+명령어 : java -jar hello-spring-0.0.1-SNAPSHOT.jar
+
+<br>
+
+# 스프링 웹 개발 기초
+
+**정적 컨텐츠**
+
+: 서버에서 하는 것 없이 파일을 웹 브라우저에 그대로 내려주는 것
+
+**MVC와 템플릿 엔진**
+
+: 가장 많이 하는 방식으로 과거의 JSP, PHP가 템플릿 엔진(서버에서 프로그래밍을 통해 동적으로 바꿔서 내려주는 것)
+
+→ 그것을 하기 위해서 Model, View, Controller
+
+정적 컨텐츠와 차이는 정적 컨텐츠는 파일을 그대로 전달해주지만 MVC는 서버에서 변형을 통해 바꿔서 html을 주는 것이다.
+
+**API**
+
+: 안드로이드나 IOS와 개발을 해야한다면 html이 아닌 JSON이라는 데이터 구조 포맷으로 클라이언트한테 전달하는 방식, Vue나 React에도 많이 사용, 서버끼리 통신하는 경우 사용
+
+## 정적 컨텐츠(Static Content)
+
+static 밑에 hello-static.html을 만들고 서버를 켜서 http://localhost:8080/hello-static.html로 접속하면 나온다.
+
+- 대신 프로그래밍을 할 수는 없고 그대로 반환한다.
+- 요청(localhost:8080/hello-static.html)을 하면 컨트롤러에서 Mapping된 컨트롤러(**컨트롤러에서 우선순위를 가짐**)를 찾는다 → 없으면 resources에 있는 hello-static.html을 찾는다. → 있으면 반환
+
+## MVC와 템플릿 엔진
+
+MVC : Model, View, Controller
+
+- Model : 화면에 필요한 것을 담아서 넘겨줌
+- View : 화면과 관련된 일, 관심사를 분리(역할과 책임)
+- Controller : 비지니스 로직과 관련, 내부적인 것을 처리
+
+### Controller
+
+```java
+@Controller
+public class HelloController {
+
+    @GetMapping("hello-mvc")
+    public String helloMvc(@RequestParam("name") String name, Model model) {
+        model.addAttribute("name", name);
+        return "hello-template";
+    }
+}
+```
+
+### View
+
+- resoures/template/hello-template.html
+
+```java
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Hello</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+    <p th:text="'안녕하세요. ' + ${data}">Hello! empty</p>
+</body>
+</html>
+```
