@@ -462,3 +462,124 @@ given(무언가 주어지고), when(실행), then(결과)으로 나누어서 작
 → `Dependency Injection(의존성 주입)` : 표준을 정의할 수 있고 정의된 표준을 바탕으로 같은 설계를 하게 해준다.
 
 - 재사용성 증가, 테스트 용이, 코드 단순화, 종속적이던 코드 감소(변경에 민감하지 않음), 가독성 증가 등
+
+<br>
+
+# 스프링 빈과 의존 관계
+
+### 스프링 빈?
+
+**Spring IoC 컨테이너가 관리하는 자바 객체를 빈(Bean)**이라는 용어로 부른다.
+
+`Spring IoC 컨테이너가 관리하는 자바 객체를 빈(Bean)`이라는 용어로 부른다.
+
+우리가 new 연산자로 어떤 객체를 생성했을 때 그 객체는 빈이 아니다.
+
+ApplicationContext.getBean()으로 얻어질 수 있는 객체는 빈이다.
+
+즉 Spring에서의 빈은 ApplicationContext가 알고있는 객체, 즉 **ApplicationContext가 만들어서 그 안에 담고 있는 객체**를 의미한다.
+
+웬만한 것들은 다 스프링 빈으로 등록해서 사용해야 한다.(장점이 많음)
+
+main이 들어가 있는 package에서 뒤져서 스프링 빈으로 등록한다.
+
+- 현재 예제에서는 hello.hellospring package
+- 하위 패키지가 아니거나 동일한 것은 컴포넌트 스캔하지 않는다.
+
+스프링은 스프링 컨테이너에 스프링 빈을 등록할 때, 기본으로 싱글톤으로 등록한다(유일하게 하나만 등록해서 공유한다)
+
+→ 따라서 같은 스프링 빈이면 모두 같은 인스턴스이다.(물건 주문을 할 때 다시 등록하는 것이 아닌 등록 되어 있는 것을 가져온다)
+
+설정으로 싱글톤이 아니게 설정할 수 있지만 특별한 경우를 제외하면 대부분 싱글톤을 사용한다.
+
+## 컴포넌트 스캔과 자동 의존관계 설정
+
+회원 컨트롤러가 회원서비스와 회원 리포지토리를 사용할 수 있게
+
+화면을 붙이려면 Controller와 View template 필요 → MemberController 필요 → MemberService를 통해 회원가입 및 조회가 가능해야한다 ⇒ 이것을 의존관계가 있다고 표현
+
+MemberService의 인스턴스를 계속 생성할 필요 없이 하나로 쓰면 된다.
+
+```java
+private final MemberService memberService = new MemberService(); 
+```
+
+위와 같이 쓸 필요 없이 Spring Container에 등록하면 하나만 등록된다. + 부가적인 효과
+
+### Controller Annotation
+
+스프링을 실행하면 스프링 컨테이너라는 통이 생김 -> MemberController 객체를 생성해서 넣어둔다.
+
+이것을 스프링 빈이 관리된다고 표현
+
+🥕 `Ctrl + Inssert` → Constructor : 생성자
+
+### **스프링의 정형화된 패턴**
+
+외부 요청을 받고(**Controller**) 비지니스 로직을 만들고(**Service**) 데이터를 저장(**Repository**)
+
+**@Autowired**
+
+스프링이 관리하는 객체에서만 동작한다. 스프링 빈으로 등록하지 않고 내가 직접 생성한 객체에서는 동작하지 않는다.
+
+ex) MemberController가 생성 될 때 스프링 빈에 등록되어 있는 memberService 객체를 가져다 넣어준다.(Dependency Injection)
+
+```java
+@Controller // 스프링을 실행하면 스프링 컨테이너라는 통이 생김 -> MemberController 객체를 생성해서 넣어둔다.
+// 이것을 스프링 빈이 관리된다고 표현
+// 컨트롤러와 서비스를 연결
+public class MemberController {
+
+    private final MemberService memberService;
+
+    @Autowired  // 생성자에 적혀있으면 memberService에 스프링이 스프링 컨테이너에 있는 memberService를 가져다가 연결해준다.
+    public MemberController(MemberService memberService) {  // MemberController가 생성 될 때 스프링 빈에 등록되어 있는 memberService 객체를 가져다 넣어준다(DI)
+        this.memberService = memberService;
+    }
+}
+```
+
+### 스프링 빈을 등록하는 2가지 방법
+
+1. **컴포넌트 스캔과 자동 의존관계 설정**
+
+   @Component가 있으면 스프링 빈으로 자동 등록된다(스프링 객체를 생성해서 스프링 컨테이너에 등록을 해준다.)
+
+   @Controller, @Service, @Repository 들어가서 보면 @Component가 있다.(자동 등록)
+
+   @AutoWired는 연결해주는 것
+
+2. **자바 코드로 직접 스프링 빈 등록하기**
+
+## 자바 코드로 직접 스프링 빈 등록하기
+
+과거에는 xml로 작성했지만 지금은 거의 자바 코드로 작성
+
+@Service와 @Repository Annotation을 지우고 Service에 ServiceConfig를 만든다.
+
+```java
+@Configuration
+public class SpringConfig {
+
+    @Bean
+    public MemberService memberService() {
+        return new MemberService(memberRepository());
+    }
+
+    @Bean
+    public MemberRepository memberRepository() {
+        return new MemoryMemberRepository();
+    }
+}
+```
+
+### 참고
+
+DI에는 필드 주입, setter 주입, 생성자 주입 이렇게 3가지 방법이 있다.(Controller 코드에서 확인) 의존관계가 실행 중에 동적으로 변하는 경우(Runtime이 떠있는데 변경하는 경우)는 거의 없으므로 **생성자 주입을 권장**한다. → 변경이 있을 경우 Config를 수정해서 다시 올린다.
+
+- 필드 주입 : 별로 좋지 않다. → 중간에 바꿀 수 있는 방법이 없다.
+- setter 주입 : 누군가가 MemberController를 호출했을 때 Public으로 열려있어야한다. 서비스를 중간에 바꿀 이유가 없는데 Public하게 노출 되어 있다. → 잘못 바꾸게 되면 문제(애플리케이션 로딩 때 바꾸고 한번 세팅이 되면 바꾸지 않음), 아무개발자나 호출할 수 있게 열려있는 것(호출하지 않아야 할 메서드는 호출되면 안됨)
+- **생성자 주입** : 권장하는 방법(생성 후 변경하지 못하도록 막는다.)
+
+실무에서는 주로 정형화된 컨트롤러, 서비스, 리포지토리(일반적으로 작성하는 것) 같은 코드는 컴포넌트 스캔을 사용한다. 그리고 정형화되지 않거나, 상황에 따라 구현 클래스를 변경해야 하면 설정을 통해 스프링 빈으로 등록한다.
+
