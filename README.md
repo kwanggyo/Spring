@@ -29,14 +29,14 @@ IOC는 DI와 DL의 의해 구현된다.
 
 **DL(Dependency Lookup) - 의존성 검색**
 
-- 컨테이너에서는 객체들을 관리하기 위해 별도의 저장소에 bin을 저장하는데 저장소에 저장되어 있는 개발자들이 컨테이너에서 제공하는 API를 이용하여 사용하고자 하는 bin을 검색하는 방법이다.
+- 컨테이너에서는 객체들을 관리하기 위해 별도의 저장소에 빈을 저장하는데 저장소에 저장되어 있는 개발자들이 컨테이너에서 제공하는 API를 이용하여 사용하고자 하는 빈을 검색하는 방법이다.
 
 **DI(Dependency Injection) - 의존성 주입**
 
 - 의존성 주입이란 객체가 서로 의존하는 관계가 되게 의존성을 주입하는 것이다.
 - 객체지향 프로그램에서 의존성 이란 하나의 객체가 어떠한 다른 객체를 사용하고 있음을 의미한다.
 
-**각 클래스 사이에 필요로 하는 의존관계를 bin설정 정보를 바탕으로 컨테이너가 자동으로 연결**해 주는 것이다.
+**각 클래스 사이에 필요로 하는 의존관계를 빈설정 정보를 바탕으로 컨테이너가 자동으로 연결**해 주는 것이다.
 
 <br>
 
@@ -287,3 +287,67 @@ public class HelloController {
 </body>
 </html>
 ```
+
+## API
+
+정적 컨텐츠 방식을 제외하면 `HTML로 주는 것`과 `API 방식으로 데이터를 바로 주는 것`이 있다.
+
+객체를 반환한다.
+
+🥕 `Art + insert` : Getter와 Setter를 자동 완성으로 만들어줄 수 있다.
+
+- HTML 형식으로 반환
+
+```java
+@GetMapping("hello-string")
+@ResponseBody   // HTTP분에 의 body부데이터를 직접 넣어주겠다는 뜻(응답 body 부분에 넣어줌)
+public String helloString(@RequestParam("name") String name) {
+    return "hello " + name; // 데이터를 그대로 넘겨준다.
+    // 이전의 템플릿 엔진은 화면을 가지고(View Template) 조작
+}
+```
+
+- JSON 형식으로 반환
+
+```java
+@GetMapping("hello-api")
+@ResponseBody
+public Hello helloApi(@RequestParam("name") String name) {
+    Hello hello = new Hello();
+    hello.setName(name);
+    return hello;   // 객체를 반환
+}
+
+static class Hello {    // 클래스 안에서 클래스를 사용할 수 있음, HelloController.Hello 이런식으로
+    private String name;
+
+    public String getName() {   // 꺼낼 때
+        return name;
+    }
+
+    public void setName(String name) {  // 넣을 때
+        this.name = name;
+    }
+}
+```
+
+**xml**
+
+- 무겁고 태그를 써야 한다.
+- "<HTML></HTML>"
+
+**JSON**
+
+- 심플하다.
+- 최근에 많이 사용(거의 통일)
+- spring에서 객체로 반환 + ResponseBody를 사용하면 기본으로 JSON을 반환한다.
+
+`**@ResponseBody`를 사용하면**
+
+- HTTP의 Body에 문자 내용을 직접 반환한다.
+- viewResolver 대신HttpMessageConverter가 동작한다.
+  - 기본 문자 처리 : StringHttpMessageConverter
+  - 기본 객체 처리 : MappingJackson2HttpMessageConverter
+  - byte 처리 등 기타 여러 HttpMessageConverter가 기본으로 등록되어 있다.
+- 참고 : 클라이언트의 HTTP Accept 헤더(어떤 form으로 받을지)와 서버의 컨트롤러 반환 타입 정보를 조합해서 HttpMessageConverter가 선택된다.
+
