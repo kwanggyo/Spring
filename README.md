@@ -679,3 +679,174 @@ Test Code를 잘 짜는 것이 중요!!
 
 <br>
 
+## JPA
+
+기존 반복 코드는 물론이고 기본적인 SQL도 JPA가 직접 만들어서 실행해준다.
+
+SQL과 데이터 중심의 설계에서 객체 중심의 설계로 패러다임을 전환할 수 있다.
+
+개발 생산성을 크게 높일 수 있다.
+
+객체 + ORM(Object Relational Mapping)
+
+Mapping은 Annotation 사용 → @Entitiy
+
+**주의 해야할 점!**
+
+항상 Transactional이 있어야 한다.
+
+- 데이터를 저장하거나 변경할 경우 필요!
+
+### 환경 설정
+
+build.gradle에 `implementation 'org.springframewok.boot:spring-boot-starter-data-jpa'`을 넣어준다.
+
+- jpa와 starter-jdbc를 포함한다.
+- 스프링 부트가 EntityManager를 자동으로 생성해준다.
+
+application.properties에 `spring.jpa.show-sql=true`을 추가한다.
+
+- jpa가 날리는 sql을 볼 수 있다.
+
+application.properties에 `spring.jpa.hibernate.ddl-auto=none`을 추가한다.
+
+- jpa를 사용하면 객체를 보고 테이블을 만들어준다.
+- 우리는 만들어져 있는 것을 쓸 것이기 때문에 none으로 설정한다.(자동 생성 기능을 끔)
+  - create로 설정하면 자동으로 만들어진다.
+
+JPA는 인터페이스만 제공 구현체는 hibernate, eclipse 등이 있다.
+
+- 보통 JPA에 hibernate를 쓴다.
+
+## Entity
+
+💡 참고 : https://doorbw.tistory.com/227
+
+💡 참고 : https://brunch.co.kr/@ambler/55
+
+: 실제, 객체라는 의미로 실무적으로 엔터티라고 부른다.
+
+즉, 업무에 필요하고 유용한 정보를 저장, 관리하기 위한 집합적인 것
+
+ex) 학생이라는 엔터티는 학번, 이름, 학점, 생일, 등록 날짜 등의 속성으로 특정지어질 수 있다.
+
+- 엔터티는 사람, 장소, 물건, 사건, 개념 등과 같은 명사에 해당된다.
+- 엔터티는 업무상 관리가 필요한 것에 해당된다.
+- 엔터티는 저장 되기 위한 어떤 것(Thing)에 해당된다.
+
+엔터티는 인스턴스의 집합으로 나타나게 된다.
+
+ex) 과목이라는 엔터티가 있다면, 수학, 영어, 국어와 같은 인스턴스가 과목이라는 엔터티에 포함되는 것이다.
+
+### **특징**
+
+일반적으로 아래의 특징을 지니지 않으면 적절하지 않은 엔터티일 확률이 높다.
+
+- 반드시 엔터티가 사용되는 곳의 업무에서 필요하며 관리하고자 하는 정보
+- 엔터티가 포함하는 인스턴스에 대해 유일한 식별자로 식별이 가능해야 한다.
+- 엔터티는 지속적으로 존재하는 두 개 이상의 인스턴스들의 조합이어야 한다.
+- 엔터티는 반드시 속성을 지녀야 한다.
+- 엔터티는 업무 프로세스에 의해서 이용되어야 한다.
+- 엔터티는 다른 엔터티와 최소 한 개 이상의 관계가 있어야 한다.
+
+### **분류**
+
+엔터티는 각각의 성격에 의해, 실체유형(유무형)에 따라 구분하거나, 엔터티의 발생시점에 의해 분류될 수 있다.
+
+1. **실체유형(유무형)에 따른 분류**
+
+- **유형 엔터티(Tangible Entity)**
+
+  물리적인 형태가 존재하는 엔터티이며 안정적이고 지속적으로 활용되는 엔터티이다.
+
+- **개념 엔터티(Conceptual Entity)**
+
+  물리적인 형태는 존재하지 않고 관리해야 할 개념적인 정보로 구분이 되는 엔터티이다.
+
+- **사건 엔터티(Event Entity)**
+
+  업무를 수행함에 따라 발생되는 엔터티이다.
+
+1. **발생시점에 따른 분류**
+
+- **기본/키 엔터티(Fundamental/Key Entity)**
+
+  해당 업무에 원래 존재하는 정보로 다른 엔터티와의 관계에 의해 발생 또는 생성되지 않고 독립적으로 존재하는 엔터티이다. 이는 독립적으로 생성이 가능하며 다른 엔터티의 부모역할을 한다.
+
+- **중심 엔터티(Main Entity)**
+
+  기본 엔터티로 부터 발생되며 업무에 있어서 중심적인 역할을 한다. 일반적으로 데이터 양이 많으며 다른 엔터티와의 관계를 통해 행위 엔터티를 생성한다.
+
+- **행위 엔터티(Active Entity)**
+
+  두 개 이상의 부모엔터티로 부터 주로 발생되고, 자주 엔터티의 내용이 바뀌거나 데이터양이 증감한다. 분석초기 단계보다는 상세 설계 단계나 프로세스와 상관 모델링을 진행하면서 도출될 수 있다.
+
+### **엔터티의 명명(Naming)**
+
+엔터티의 이름을 정하는 데에 있어서는 다음과 같은 원칙을 지켜야 한다.
+
+- 가능하면 현업업무에서 사용하는 용어를 사용한다.
+- 가능하면 약어를 사용하지 않는다.
+- 단수 명사를 사용한다.
+- 모든 엔터티를 통틀어서 유일한 이름을 가져야 한다.
+- 엔터티의 생성의미대로 이름을 부여한다.
+
+### Code
+
+DB에서 id를 자동으로 생성해 주는 것을 Identity 전략이라고 한다.
+
+- `@Id @GeneratedValue(strategy = GenerationType.*IDENTITY*)`
+
+DB 컬럼명이 username일 때 매핑
+
+- `@Column(name = "username")`
+
+JPA는 EntityManager로 모든 것이 동작한다.(JPA를 쓰려면 EntityManager를 Injection 받아야 한다.)
+
+Pk가 아닌 findByName이나 findAll 같은 경우에는 JPQL을 작성해줘야 한다.
+
+- 조회, 저장, 업데이트는 sql이 없어도 된다.
+
+✅ stream()
+
+💡 참고 : https://dpdpwl.tistory.com/81
+
+람다함수형식으로 간결하고 깔끔하게 요소들을 처리 가능
+
+map : 특정 조건에 해당하는 값으로 변환
+
+- 요소들을 대,소문자 변형 등 의 작업을 하고 싶을 때 사용 가능
+
+filter : 조건에 따라 걸러내는 작업
+
+- 길이의 제한, 특정 문자 포함 등 의 작업을 하고 싶을 때 사용 가능
+
+sorted : 정렬해주는 작업
+
+- 요소들의 가공이 끝났다면 리턴해 줄 결과를 collect를 통해 만들어 준다.
+
+**예시**
+
+```java
+ArrayList<string> list = new ArrayList<>(Arrays.asList("Apple","Banana","Melon","Grape","Strawberry"));
+System.out.println(list);
+//[Apple, Banana, Melon, Grape, Strawberry]
+
+System.out.println(list.stream().map(s->s.toUpperCase()).collect(Collectors.joining(" "))); //APPLE BANANA MELON GRAPE STRAWBERRY
+System.out.println(list.stream().map(s->s.toUpperCase()).collect(Collectors.toList())); //[APPLE, BANANA, MELON, GRAPE, STRAWBERRY]
+System.out.println(list.stream().map(String::toUpperCase).collect(Collectors.toList())); //[APPLE, BANANA, MELON, GRAPE, STRAWBERRY]
+list.stream().map(String::toUpperCase).forEach(s -> System.out.println(s));
+//APPLE
+//BANANA
+//MELON
+//GRAPE
+//STRAWBERRY
+
+System.out.println(list.stream().filter(t->t.length()>5).collect(Collectors.joining(" "))); //Banana Strawberry
+System.out.println(list.stream().filter(t->t.length()>5).collect(Collectors.toList())); //[Banana, Strawberry]
+
+System.out.println(list.stream().sorted().collect(Collectors.toList())); //[Apple, Banana, Grape, Melon, Strawberry]
+```
+
+
+
