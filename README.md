@@ -848,5 +848,133 @@ System.out.println(list.stream().filter(t->t.length()>5).collect(Collectors.toLi
 System.out.println(list.stream().sorted().collect(Collectors.toList())); //[Apple, Banana, Grape, Melon, Strawberry]
 ```
 
+## 스프링 데이터 JPA
 
+스프링 부트와 JPA만 사용해도 개발 생산성이 매우 증가하고 개발해야할 코드도 줄어든다.
 
+여기에 스프링 데이터 JPA를 사용하면 리포지토리에 구현 클래스 없이 인터페이스 만으로 개발을 완료할 수 있다.
+
+반복 개발해온 기본 CRUD 기능도 스프링 데이터 JPA가 모두 제공한다.
+
+→ 개발자는 핵심 비즈니스 로직을 개발하는데 집중할 수 있다.
+
+스프링 데이터 JPA가 SpringDataJpaMemberRepository를 스프링 빈으로 자동 등록해준다
+
+인터페이스를 통한 기본적인 CRUD 기능 제공 findByName() , findByEmail() 처럼 메서드 이름 만으로 조회 기능 제공 페이징 기능 자동 제공
+
+### **참고**
+
+실무에서는 JPA와 스프링 데이터 JPA를 기본으로 사용하고, 복잡한 동적 쿼리는 Querydsl이라는 라이브러리를 사용하면 된다.
+
+Querydsl을 사용하면 쿼리도 자바 코드로 안전하게 작성할 수 있고, 동적 쿼리도 편리하게 작성할 수 있다.
+
+이 조합으로 해결하기 어려운 쿼리는 JPA가 제공하는 네이티브 쿼리를 사용하거나, JdbcTemplate를 사용하면 된다.
+
+<br>
+
+# AOP
+
+관점 지향 프로그래밍(**Aspect Oriented Programming)**
+
+공통 관심 사항(cross-cutting concern)과 핵심 관심 사항을 분리(core concern)
+
+## AOP가 필요한 상황
+
+모든 메서드의 호출 시간을 측정하고 싶다면?
+
+공통 관심 사항(cross-cutting concern) vs 핵심 관심 사항(core concern)
+
+회원 가입 시간, 회원 조회 시간을 측정하고 싶다면?
+
+- 예시
+
+  시간을 측정하는 것은 핵심 로직이 아니라 공통 로직(공통 관심 사항)
+
+  try 안에 있는 것이 핵심 로직(핵심 관심 사항)
+
+  ```java
+  public class MemberService {
+   /**
+   * 회원가입
+   */
+   public Long join(Member member) {
+  	 long start = System.currentTimeMillis();
+  	 try {
+  		 validateDuplicateMember(member); //중복 회원 검증
+  		 memberRepository.save(member);
+  		 return member.getId();
+  		 } finally {
+  		 long finish = System.currentTimeMillis();
+  		 long timeMs = finish - start;
+  		 System.out.println("join " + timeMs + "ms");
+  	 }
+   }
+   /**
+   * 전체 회원 조회
+   */
+  	 public List<Member> findMembers() {
+  	 long start = System.currentTimeMillis();
+  		 try {
+  		 return memberRepository.findAll();
+  		 } finally {
+  		 long finish = System.currentTimeMillis();
+  		 long timeMs = finish - start;
+  		 System.out.println("findMembers " + timeMs + "ms");
+  		 }
+  	 }
+  }
+  ```
+
+  **문제**
+
+  예시처럼 하게 되면 유지보수가 어렵다.
+
+  별도의 공통 로직으로 만들기 어렵다.
+
+  시간을 측정하는 로직을 바꾸려고 하면 모든 로직을 찾아가며 바꿔야 한다.
+
+## AOP 적용
+
+시간 측정 로직을 한 곳에 모으고 원하는 곳에 적용한다.
+
+- 예시
+
+  - hello.hellospring > aop > TimeTraceAop
+
+  ```java
+  package hello.hellospring.aop;
+  
+  import org.aspectj.lang.ProceedingJoinPoint;
+  import org.aspectj.lang.annotation.Around;
+  import org.aspectj.lang.annotation.Aspect;
+  import org.springframework.stereotype.Component;
+  
+  @Aspect
+  @Component
+  public class TimeTraceAop {
+  
+      @Around("execution(* hello.hellospring..*(..))")
+  //    @Around("execution(* hello.hellospring.service..*(..))") // 서비스만 측정하고 싶을 때
+      public Object execute(ProceedingJoinPoint joinPoint) throws Throwable {
+          long start = System.currentTimeMillis();
+          System.out.println("START: " + joinPoint.toString());
+          try {
+              Object result = joinPoint.proceed();    // 다음 메서드 진행
+              return result;
+          } finally {
+              long finish = System.currentTimeMillis();
+              long timeMs = finish - start;
+              System.out.println("END: " + joinPoint.toString() + " " + timeMs + "ms");
+          }
+  
+      }
+  }
+  ```
+
+  **해결**
+
+  - 회원가입, 회원 조회 등 핵심 관심 사항과 공통 관심 사항을 분리한다.
+  - 시간을 측정하는 로직을 별도의 공통 로직으로 만들었다.
+  - 핵심 관심 사항을 깔끔하게 유지할 수 있다.
+  - 변경이 필요하면 이 로직만 변경하면 된다.
+  - 원하는 적용 대상을 선택할 수 있다. → @Around
