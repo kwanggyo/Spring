@@ -1005,3 +1005,129 @@ Querydsl을 사용하면 쿼리도 자바 코드로 안전하게 작성할 수 �
 **updatable** : 위와 동일한 하지만 수정일 때 해당 된다.
 
 insertable=false는 insert 시점에 막는 것이고, updatable는 update 시점에 막는 기능이다.
+
+<br>
+
+# 프로젝트 코드
+
+## Entity
+
+### BaseEntity > @MappedSuperclass
+
+💡 출처 : https://ict-nroo.tistory.com/129
+
+**객체의 입장에서** 공통 매핑 정보가 필요할 때 사용한다.
+
+id, name은 객체의 입장에서 볼 때 계속 나온다.
+
+이렇게 공통 매핑 정보가 필요할 때, 부모 클래스에 선언하고 속성만 상속 받아서 사용하고 싶을 때 @MappedSuperclass를 사용한다.
+
+DB 테이블과는 상관없다. 
+
+### Comment > @ManyToOne
+
+N:1 관계
+
+### Comment > @JoinColumn
+
+현재 Entity에서 관계할 Entity에 매핑할 키 값을 정의한다.
+
+- name : 매핑할 키 값
+- nullable : null 값이 들어갈 수 있는지
+
+### Comment > @PrePersist
+
+DB에 해당 테이블의 insert 연산을 실행 할 때 같이 실행하라는 의미이다.
+
+- createdAt() 로직을 실행
+
+```java
+package com.b303.mokkozi.entity;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import java.util.Date;
+
+@Entity
+@Getter
+@Setter
+public class Comment extends BaseEntity{
+
+    private String content;
+    private Date regDate;
+
+    @ManyToOne
+    @JoinColumn(name = "board_id",nullable = false)
+    private Board board;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id",nullable = false)
+    private User user;
+
+    @PrePersist
+    public void createdAt() {
+        this.regDate = new Date();
+    }
+
+}
+```
+
+## CommentDto
+
+### @JsonFormat
+
+Jackson 라이브러리에서 제공하는 어노테이션으로 JSON 응답 값의 형식을 지정할 때 사용한다.
+
+날짜 형식 뿐만이 아니라 JSON 응답의 키 설정, 특정 값의 포함 여부, 응답 값의 순서 등 여러가지 형태를 의미한다.
+
+spring-boot-starter 패키지에 Jackson 라이브러리가 포함되어 있어서 build.gradle에 라이브러리를 따로 추가할 필요가 없다.
+
+### @Builder
+
+JPA 엔티티 객체들에 Builder 어노테이션을 이용해서 엔티티 객체를 Builder를 이용하는 것이 흔한 패턴이다.
+
+**장점**
+
+- 인자가 많을 경우 쉽고 안전하게 객체를 생성할 수 있다.
+- 인자의 순서와 상관없이 객체를 생성할 수 있다.
+- 적절한 책임을 이름에 부여하여 가독성을 높일 수 있다.
+
+```java
+package com.b303.mokkozi.comment.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Date;
+
+@Getter
+@Setter
+public class CommentDto {
+
+    private Long id;
+    private String content;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private Date regDate;
+
+    @Builder
+    public CommentDto(Long id, String content, Date regDate) {
+        this.id = id;
+        this.content = content;
+        this.regDate = regDate;
+    }
+
+}
+```
+
+## Service
+
+orElseThrow() : 값이 없을 경우 처리(Optional 사용)
+
+NoSuchElementException() : 비어있는, 없는 공간의 값을 꺼내려고 하면 발생한다. → 예외 처리
